@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NEXUS">
+<meta name="theme-color" content="#050806">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>MATRIX NEXUS // CORE 1.1</title>
+<style>
+  :root {
+    --bg-main: #050806;
+    --bg-panel: #0a110d;
+    --bg-card: #0f1a14;
+    --border: #1b3b28;
+    --border-active: #00ff66;
+    --neon: #00ff66;
+    --neon-dim: rgba(0, 255, 102, 0.12);
+    --text-main: #d8f3e3;
+    --text-muted: #68947a;
+    --danger: #ff3b5c;
+    --cyan: #00e5ff;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', Courier, monospace;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background-image: radial-gradient(rgba(0, 255, 102, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* SOL NAVİGASYON */
+  .sidebar {
+    width: 230px;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px 14px;
+    flex-shrink: 0;
+  }
+
+  .brand {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+
+  .brand h1 {
+    font-size: 18px;
+    color: var(--neon);
+    letter-spacing: 2px;
+    text-shadow: 0 0 8px rgba(0, 255, 102, 0.4);
+  }
+
+  .brand span {
+    font-size: 10px;
+    color: var(--text-muted);
+    display: block;
+    margin-top: 4px;
+  }
+
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+  }
+
+  .nav-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    text-align: left;
+    padding: 12px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-btn:hover, .nav-btn.active {
+    background: var(--neon-dim);
+    border-color: var(--border-active);
+    color: var(--neon);
+    box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.1);
+  }
+
+  .sys-status {
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--neon);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 6px var(--neon);
+  }
+
+  /* ANA ÇALIŞMA ALANI */
+  .main-area {
+    flex-grow: 1;
+    min-width: 0;
+    padding: 24px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+  }
+
+  .header-bar h2 {
+    font-size: 20px;
+    color: var(--neon);
+    letter-spacing: 1px;
+  }
+
+  .screen {
+    display: none;
+    flex-direction: column;
+    gap: 20px;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .screen { animation: none; }
+    .nav-btn, .btn { transition: none; }
+  }
+
+  /* KARTLAR & GRIDLER */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    position: relative;
+    min-width: 0;
+  }
+
+  .card-title {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .empty {
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 8px 2px;
+  }
+
+  /* FORM & BUTONLAR */
+  input, textarea, select {
+    width: 100%;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 16px; /* iPad Safari odaklanınca zoom yapmasın */
+    margin-bottom: 10px;
+    outline: none;
+  }
+
+  input:focus, textarea:focus, select:focus { border-color: var(--neon); }
+
+  .btn {
+    background: var(--neon-dim);
+    border: 1px solid var(--neon);
+    color: var(--neon);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  .btn:active { background: var(--neon); color: var(--bg-main); }
+
+  .btn:focus-visible, .nav-btn:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+  }
+
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+
+  .btn-danger {
+    border-color: var(--danger);
+    color: var(--danger);
+    background: rgba(255, 59, 92, 0.1);
+  }
+
+  .btn-danger:active { background: var(--danger); color: var(--bg-main); }
+
+  /* ETİKETLER & LİSTELER */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    border-radius: 4px;
+    background: var(--neon-dim);
+    color: var(--neon);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .item-box {
+    background: var(--bg-main);
+    border: 1px solid var(--border);
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+  }
+
+  .item-box h4 {
+    color: var(--neon);
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .item-box p {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-main);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
+  .card p, .card h4 { overflow-wrap: anywhere; }
+
+  .item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  #toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    background: var(--bg-panel);
+    border: 1px solid var(--neon);
+    color: var(--neon);
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 10;
+    max-width: 90vw;
+  }
+
+  #toast.show { opacity: 1; }
+
+  /* IPAD DİKEY MOD UYUMU */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    .sidebar {
+      width: 100%;
+      flex-direction: row;
+      align-items: center;
+      padding: 10px;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .brand, .sys-status { display: none; }
+    .nav-list { flex-direction: row; }
+    .nav-btn { white-space: nowrap; padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- SOL MENÜ -->
+  <aside class="sidebar">
+    <div>
+      <div class="brand">
+        <h1>MATRIX NEXUS</h1>
+        <span>PERSONAL OS // ARCH 1.1</span>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-btn active" data-screen="home">01 // NEXUS HOME</button>
+        <button class="nav-btn" data-screen="think">02 // THINK SPACE</button>
+        <button class="nav-btn" data-screen="intel">03 // INTELLIGENCE HUB</button>
+        <button class="nav-btn" data-screen="vault">04 // KNOWLEDGE VAULT</button>
+        <button class="nav-btn" data-screen="creation">05 // CREATION STUDIO</button>
+        <button class="nav-btn" data-screen="control">06 // CONTROL CENTER</button>
+      </nav>
+    </div>
+    <div class="sys-status">
+      <div><span class="status-dot"></span>CORE: ONLINE (LOCAL)</div>
+      <div style="margin-top:4px;">DEVICE: IPAD-9 // PWA</div>
+    </div>
+  </aside>
+
+  <!-- ANA EKRAN -->
+  <main class="main-area">
+    <div class="header-bar">
+      <h2 id="screen-title">01 // NEXUS HOME</h2>
+      <div id="live-clock" style="font-size: 13px; color: var(--neon);">--:--:--</div>
+    </div>
+
+    <!-- 01: NEXUS HOME -->
+    <section id="screen-home" class="screen active">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">SYSTEM BRIEFING // WELCOME</div>
+          <p style="font-size: 14px; line-height: 1.6;">
+            Hoş geldin Operatör. Tüm veriler bu cihazın tarayıcı belleğinde (localStorage) tutuluyor. Düzenli olarak Control Center'dan yedek almayı unutma.
+          </p>
+          <div style="margin-top: 14px;">
+            <label for="focus-input" style="font-size: 11px; color: var(--text-muted);">AKTİF ODAK ALANI (FOCUS AREA)</label>
+            <input type="text" id="focus-input" placeholder="Şu an neyin üzerine çalışıyorsun?">
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">TELEMETRY // SİSTEM ÖZETİ</div>
+          <div class="grid-2" style="gap: 10px;">
+            <div class="item-box">
+              <span style="font-size:11px; color:var(--text-muted);">FİKİR KARTLARI</span>
+              <h3 id="stat-ideas" style="color:var(--neon); font-size:22px; margin-top:4px;">0</h3>
+            </div>
+            <div class="item-box">
+              <span style="font-size:11px; color:var(--text-muted);">AKTİF PROJELER</span>
+              <h3 id="stat-projects" style="color:var(--cyan); font-size:22px; margin-top:4px;">0</h3>
+            </div>
+            <div class="item-box">
+              <span style="font-size:11px; color:var(--text-muted);">BİLGİ NOTLARI</span>
+              <h3 id="stat-notes" style="color:var(--neon); font-size:22px; margin-top:4px;">0</h3>
+            </div>
+            <div class="item-box">
+              <span style="font-size:11px; color:var(--text-muted);">AI PERSONA</span>
+              <h3 id="stat-personas" style="color:var(--cyan); font-size:22px; margin-top:4px;">0</h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">QUICK ACCESS // HIZLI MODÜL GEÇİŞİ</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" data-goto="think">+ Yeni Fikir Kartı</button>
+          <button class="btn" data-goto="creation">+ Proje Başlat</button>
+          <button class="btn" data-goto="intel">AI Persona Kopyala</button>
+          <button class="btn" data-goto="vault">Not Arşivle</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02: THINK SPACE -->
+    <section id="screen-think" class="screen">
+      <div class="card">
+        <div class="card-title">YENİ FİKİR DÜĞÜMÜ OLUŞTUR</div>
+        <div class="grid-2">
+          <input type="text" id="idea-title" placeholder="Fikir Başlığı (Örn: Gıda Teknolojisi & AI)">
+          <input type="text" id="idea-tag" placeholder="Kategori Etiketi (Örn: Biyoinformatik)">
+        </div>
+        <textarea id="idea-desc" rows="2" placeholder="Fikrin detayı ve diğer kavramlarla bağlantısı..."></textarea>
+        <button class="btn" data-action="add-idea">DÜĞÜMÜ SİSTEME EKLE</button>
+      </div>
+
+      <div class="grid-3" id="ideas-container"></div>
+    </section>
+
+    <!-- 03: INTELLIGENCE HUB -->
+    <section id="screen-intel" class="screen">
+      <div class="card">
+        <div class="card-title">YENİ AI PERSONA / SİSTEM PROMPTU TANIMLA</div>
+        <div class="grid-2">
+          <input type="text" id="ai-name" placeholder="Uzman Adı (Örn: Critical Thinker)">
+          <input type="text" id="ai-role" placeholder="Uzmanlık Alanı (Örn: Hata & Mantık Denetçisi)">
+        </div>
+        <textarea id="ai-prompt" rows="3" placeholder="Sistem talimatı (Prompt)..."></textarea>
+        <button class="btn" data-action="add-persona">PERSONA KAYDET</button>
+      </div>
+
+      <div class="grid-2" id="personas-container"></div>
+    </section>
+
+    <!-- 04: KNOWLEDGE VAULT -->
+    <section id="screen-vault" class="screen">
+      <div class="card">
+        <div class="card-title">HAFIZA KAYDI // BİLGİ & ARAŞTIRMA EKLE</div>
+        <div class="grid-2">
+          <input type="text" id="note-title" placeholder="Konu / Kaynak Başlığı">
+          <input type="text" id="note-link" placeholder="İlişkili Proje veya Fikir">
+        </div>
+        <textarea id="note-content" rows="3" placeholder="Öğrenilen bilgi, karar veya araştırma özeti..."></textarea>
+        <button class="btn" data-action="add-note">VAULT'A MÜHÜRLE</button>
+      </div>
+
+      <div id="notes-container"></div>
+    </section>
+
+    <!-- 05: CREATION STUDIO -->
+    <section id="screen-creation" class="screen">
+      <div class="card">
+        <div class="card-title">YENİ PROJE BAŞLAT</div>
+        <div class="grid-2">
+          <input type="text" id="proj-name" placeholder="Proje Adı">
+          <select id="proj-status">
+            <option value="AKTİF">DURUM: AKTİF</option>
+            <option value="PLANLAMA">DURUM: PLANLAMA</option>
+            <option value="TAMAMLANDI">DURUM: TAMAMLANDI</option>
+          </select>
+        </div>
+        <textarea id="proj-goal" rows="2" placeholder="Projenin temel amacı ve sonraki adımı..."></textarea>
+        <button class="btn" data-action="add-project">PROJEYİ OLUŞTUR</button>
+      </div>
+
+      <div class="grid-2" id="projects-container"></div>
+    </section>
+
+    <!-- 06: CONTROL CENTER -->
+    <section id="screen-control" class="screen">
+      <div class="card">
+        <div class="card-title">VERİ YÖNETİMİ & TAŞINABİLİRLİK (JSON BACKUP)</div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5;">
+          Yedek al, başka cihaza geç ya da veriyi geri yükle. Safari yerel veriyi silebilir, bu yüzden arada bir yedek indir.
+        </p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" data-action="export">VERİTABANINI İNDİR (.JSON)</button>
+          <button class="btn" data-action="import">YEDEĞİ GERİ YÜKLE</button>
+          <button class="btn btn-danger" data-action="reset">SİSTEMİ SIFIRLA</button>
+        </div>
+        <input type="file" id="import-file" accept="application/json,.json" style="display:none; margin-top:10px;">
+        <p id="storage-info" style="font-size: 12px; color: var(--text-muted); margin-top: 14px;"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  // ---------- VERİ MODELİ ----------
+  const STORAGE_KEY = 'matrix_nexus_db';
+  const LISTS = ['ideas', 'projects', 'notes', 'personas'];
+
+  const defaultDB = {
+    focus: "MATRIX NEXUS 1.1 Çekirdek İnşası",
+    ideas: [
+      { id: 1, title: "Gıda Teknolojisi & AI", tag: "Biyoinformatik", desc: "Tarımsal verimlilik ve moleküler analiz için yapay zeka modelleri." }
+    ],
+    projects: [
+      { id: 1, name: "MATRIX NEXUS PWA", status: "AKTİF", goal: "iPad 9 üzerinde çalışan kişisel işletim ortamı çekirdeği." }
+    ],
+    notes: [
+      { id: 1, title: "Mimari Karar #01", link: "MATRIX NEXUS", content: "Önce çalışan yerel çekirdek, sonra Supabase ve AI API entegrasyonu." }
+    ],
+    personas: [
+      { id: 1, name: "LOGOS // Sistem Mimarı", role: "Strateji & Sadelik", prompt: "Bir sistemin büyüklüğünü özellik sayısıyla değil tutarlılığıyla ölç. Gereksiz karmaşıklığı ele." },
+      { id: 2, name: "BAĞIMSIZ DENETÇİ", role: "Sıfır Yağcılık & Doğrulama", prompt: "Asla ilk cümlede onaylama. Önce problemi kendi içinde adım adım çöz, sonra benim çözümümü eleştir." },
+      { id: 3, name: "ENGLISH TECH TUTOR", role: "B1 Teknik İngilizce", prompt: "Yazılım ve yapay zeka kavramlarını B1 seviyesinde ama doğal geliştirici jargonuyla pratik yaptır." }
+    ]
+  };
+
+  const clone = o => JSON.parse(JSON.stringify(o));
+
+  // Eksik/bozuk alanları varsayılanla tamamlar; eski yedekler yeni sürümde de çalışır.
+  function normalize(raw) {
+    const d = clone(defaultDB);
+    if (!raw || typeof raw !== 'object') return d;
+    if (typeof raw.focus === 'string') d.focus = raw.focus;
+    LISTS.forEach(k => {
+      if (Array.isArray(raw[k])) {
+        d[k] = raw[k]
+          .filter(x => x && typeof x === 'object' && x.id !== undefined)
+          .map(x => {
+            const o = {};
+            Object.keys(x).forEach(f => { o[f] = typeof x[f] === 'string' || typeof x[f] === 'number' ? x[f] : String(x[f] ?? ''); });
+            return o;
+          });
+      }
+    });
+    return d;
+  }
+
+  function loadDB() {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      return s ? normalize(JSON.parse(s)) : clone(defaultDB);
+    } catch (e) {
+      return clone(defaultDB);
+    }
+  }
+
+  let db = loadDB();
+
+  function saveDB() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    } catch (e) {
+      toast('Kayıt başarısız: tarayıcı belleği dolu ya da kapalı. Yedek indir!');
+    }
+    renderAll();
+  }
+
+  // ---------- YARDIMCILAR ----------
+  function esc(v) {
+    return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  const $ = id => document.getElementById(id);
+
+  let toastTimer;
+  function toast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  function takeValue(id) {
+    const el = $(id);
+    const v = el.value.trim();
+    return v;
+  }
+
+  function clearFields(ids) { ids.forEach(id => { $(id).value = ''; }); }
+
+  // ---------- SAAT ----------
+  function tick() {
+    $('live-clock').textContent = new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // ---------- NAVİGASYON ----------
+  function goTo(screenId) {
+    const btn = document.querySelector('.nav-btn[data-screen="' + screenId + '"]');
+    if (!btn) return;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    $('screen-' + screenId).classList.add('active');
+    btn.classList.add('active');
+    $('screen-title').textContent = btn.textContent;
+    $('screen-' + screenId).scrollIntoView({ block: 'start' });
+  }
+
+  // ---------- İŞLEMLER ----------
+  function addIdea() {
+    const title = takeValue('idea-title');
+    if (!title) return toast('Fikir başlığı boş olamaz.');
+    db.ideas.unshift({ id: Date.now(), title, tag: takeValue('idea-tag') || 'GENEL', desc: takeValue('idea-desc') });
+    clearFields(['idea-title', 'idea-tag', 'idea-desc']);
+    saveDB();
+  }
+
+  function promoteToProject(id) {
+    const idea = db.ideas.find(i => String(i.id) === String(id));
+    if (!idea) return;
+    db.projects.unshift({ id: Date.now(), name: idea.title, status: 'PLANLAMA', goal: idea.desc });
+    saveDB();
+    goTo('creation');
+    toast('Fikir projeye dönüştürüldü.');
+  }
+
+  function deleteItem(type, id) {
+    if (!LISTS.includes(type)) return;
+    if (!confirm('Bu kayıt silinsin mi?')) return;
+    db[type] = db[type].filter(item => String(item.id) !== String(id));
+    saveDB();
+  }
+
+  function addPersona() {
+    const name = takeValue('ai-name');
+    const prompt = takeValue('ai-prompt');
+    if (!name || !prompt) return toast('Uzman adı ve prompt gerekli.');
+    db.personas.unshift({ id: Date.now(), name, role: takeValue('ai-role'), prompt });
+    clearFields(['ai-name', 'ai-role', 'ai-prompt']);
+    saveDB();
+  }
+
+  async function copyPrompt(id) {
+    const p = db.personas.find(x => String(x.id) === String(id));
+    if (!p) return;
+    try {
+      await navigator.clipboard.writeText(p.prompt);
+    } catch (e) {
+      // Eski tarayıcı / izin yoksa yedek yöntem
+      const ta = document.createElement('textarea');
+      ta.value = p.prompt;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      ta.remove();
+    }
+    toast('Prompt kopyalandı. İstediğin AI sohbetine yapıştır.');
+  }
+
+  function addNote() {
+    const title = takeValue('note-title');
+    const content = takeValue('note-content');
+    if (!title || !content) return toast('Başlık ve içerik gerekli.');
+    db.notes.unshift({ id: Date.now(), title, link: takeValue('note-link') || 'BAĞIMSIZ', content });
+    clearFields(['note-title', 'note-link', 'note-content']);
+    saveDB();
+  }
+
+  function addProject() {
+    const name = takeValue('proj-name');
+    if (!name) return toast('Proje adı boş olamaz.');
+    db.projects.unshift({ id: Date.now(), name, status: $('proj-status').value, goal: takeValue('proj-goal') });
+    clearFields(['proj-name', 'proj-goal']);
+    saveDB();
+  }
+
+  // ---------- YEDEK: DIŞA / İÇE AKTAR ----------
+  function exportData() {
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = 'matrix_nexus_backup_' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Yedek hazırlandı.');
+  }
+
+  function importData(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        if (!parsed || typeof parsed !== 'object' || !LISTS.some(k => Array.isArray(parsed[k]))) {
+          throw new Error('format');
+        }
+        const incoming = normalize(parsed);
+        const summary = incoming.ideas.length + ' fikir, ' + incoming.projects.length + ' proje, ' +
+                        incoming.notes.length + ' not, ' + incoming.personas.length + ' persona';
+        if (confirm('Mevcut veriler yerine şu yedek yüklensin mi?\n' + summary)) {
+          db = incoming;
+          saveDB();
+          toast('Yedek geri yüklendi.');
+        }
+      } catch (e) {
+        toast('Geçersiz yedek dosyası.');
+      }
+      $('import-file').value = '';
+    };
+    reader.onerror = () => toast('Dosya okunamadı.');
+    reader.readAsText(file);
+  }
+
+  function resetSystem() {
+    if (confirm('Tüm yerel veriler sıfırlanıp varsayılan çekirdeğe dönülecek. Önce yedek aldın mı? Emin misin?')) {
+      try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+      db = clone(defaultDB);
+      saveDB();
+    }
+  }
+
+  // ---------- ÇİZİM ----------
+  const emptyMsg = t => '<div class="empty">' + t + '</div>';
+
+  function renderAll() {
+    const focusEl = $('focus-input');
+    if (document.activeElement !== focusEl) focusEl.value = db.focus;
+    $('stat-ideas').textContent = db.ideas.length;
+    $('stat-projects').textContent = db.projects.length;
+    $('stat-notes').textContent = db.notes.length;
+    $('stat-personas').textContent = db.personas.length;
+
+    $('ideas-container').innerHTML = db.ideas.length ? db.ideas.map(i => `
+      <div class="card">
+        <span class="tag">#${esc(i.tag)}</span>
+        <h4 style="color:var(--neon); margin-bottom:8px;">${esc(i.title)}</h4>
+        <p style="font-size:13px; color:var(--text-main); line-height:1.4; white-space:pre-wrap;">${esc(i.desc)}</p>
+        <div class="item-actions">
+          <button class="btn btn-sm" data-action="promote" data-id="${esc(i.id)}">Projeye Dönüştür →</button>
+          <button class="btn btn-sm btn-danger" data-action="delete" data-type="ideas" data-id="${esc(i.id)}">Sil</button>
+        </div>
+      </div>`).join('') : emptyMsg('Henüz fikir yok. Yukarıdan ilk düğümü ekle.');
+
+    $('personas-container').innerHTML = db.personas.length ? db.personas.map(p => `
+      <div class="card">
+        <div class="card-title"><span>${esc(p.role)}</span></div>
+        <h4 style="color:var(--cyan); margin-bottom:8px;">${esc(p.name)}</h4>
+        <div class="item-box" style="font-size:12px; white-space:pre-wrap; overflow-wrap:anywhere;">${esc(p.prompt)}</div>
+        <div class="item-actions">
+          <button class="btn btn-sm" data-action="copy" data-id="${esc(p.id)}">Promptu Kopyala</button>
+          <button class="btn btn-sm btn-danger" data-action="delete" data-type="personas" data-id="${esc(p.id)}">Sil</button>
+        </div>
+      </div>`).join('') : emptyMsg('Henüz persona yok.');
+
+    $('notes-container').innerHTML = db.notes.length ? db.notes.map(n => `
+      <div class="item-box">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <h4>${esc(n.title)}</h4>
+          <span class="tag">Bağlantı: ${esc(n.link)}</span>
+        </div>
+        <p>${esc(n.content)}</p>
+        <div class="item-actions">
+          <button class="btn btn-sm btn-danger" data-action="delete" data-type="notes" data-id="${esc(n.id)}">Sil</button>
+        </div>
+      </div>`).join('') : emptyMsg('Vault boş. İlk notunu mühürle.');
+
+    $('projects-container').innerHTML = db.projects.length ? db.projects.map(pr => `
+      <div class="card">
+        <span class="tag" style="color:var(--cyan); border-color:var(--cyan);">${esc(pr.status)}</span>
+        <h4 style="color:var(--neon); margin-bottom:8px;">${esc(pr.name)}</h4>
+        <p style="font-size:13px; line-height:1.4; white-space:pre-wrap;">${esc(pr.goal)}</p>
+        <div class="item-actions">
+          <button class="btn btn-sm btn-danger" data-action="delete" data-type="projects" data-id="${esc(pr.id)}">Sil</button>
+        </div>
+      </div>`).join('') : emptyMsg('Henüz proje yok.');
+  }
+
+  // ---------- OLAY YÖNETİMİ (tek yerden) ----------
+  document.addEventListener('click', e => {
+    const nav = e.target.closest('[data-screen]');
+    if (nav) return goTo(nav.dataset.screen);
+
+    const go = e.target.closest('[data-goto]');
+    if (go) return goTo(go.dataset.goto);
+
+    const el = e.target.closest('[data-action]');
+    if (!el) return;
+    const { action, id, type } = el.dataset;
+
+    switch (action) {
+      case 'add-idea': return addIdea();
+      case 'add-persona': return addPersona();
+      case 'add-note': return addNote();
+      case 'add-project': return addProject();
+      case 'promote': return promoteToProject(id);
+      case 'delete': return deleteItem(type, id);
+      case 'copy': return copyPrompt(id);
+      case 'export': return exportData();
+      case 'import': return $('import-file').click();
+      case 'reset': return resetSystem();
+    }
+  });
+
+  $('import-file').addEventListener('change', e => importData(e.target.files[0]));
+
+  $('focus-input').addEventListener('change', () => {
+    db.focus = $('focus-input').value;
+    saveDB();
+  });
+
+  // ---------- KALICI DEPOLAMA & PWA ----------
+  async function initStorage() {
+    const info = $('storage-info');
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        const ok = await navigator.storage.persist();
+        info.textContent = ok
+          ? 'Depolama: kalıcı (tarayıcı veriyi otomatik silmez).'
+          : 'Depolama: kalıcılık garantisi yok. Ana ekrana ekleyip yedek almanı öneririm.';
+      } else {
+        info.textContent = 'Depolama: kalıcılık durumu bu tarayıcıda okunamıyor. Yedek almayı unutma.';
+      }
+    } catch (e) {
+      info.textContent = '';
+    }
+  }
+
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  renderAll();
+  initStorage();
+</script>
+</body>
+</html>
